@@ -1,0 +1,16 @@
+{
+    "name": "ESP-IDF/WSL",
+    "build": 
+    {
+        "dockerfile": "Dockerfile"
+    },
+    "customizations": 
+    {
+        "vscode": {
+            "extensions": [
+                "vscode.git"
+            ]
+        }
+    }
+    
+}
