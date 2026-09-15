@@ -56,10 +56,6 @@ RUN git config --global --add safe.directory /opt/esp/idf/components/openthread/
 RUN /opt/esp/python_env/idf5.2_py3.10_env/bin/python -m pip install esp_debug_backend
 RUN /opt/esp/python_env/idf5.2_py3.10_env/bin/python -m pip install esp_docs
 
-RUN git config --global user.name "Brendon Nhachi"
-RUN git config --global user.email "brendon9624@gmail.com"
-
-
 RUN echo "source /opt/esp/idf/export.sh > /dev/null 2>&1" >> ~/.bashrc
 ENTRYPOINT [ "/opt/esp/entrypoint.sh" ]
 
