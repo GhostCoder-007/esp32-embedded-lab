@@ -1,0 +1,84 @@
+// For format details, see https://aka.ms/devcontainer.json. For config options, see the README at:
+// https://github.com/microsoft/vscode-dev-containers/tree/v0.183.0/containers/ubuntu
+{
+    "name": "ESP-IDF/WSL",
+    "build": {
+        "dockerfile": "Dockerfile"
+    },
+    /* the path of workspace folder to be opened after container is running
+    */
+    "workspaceMount": "source=${localWorkspaceFolder},target=/home/esp-bn/${localWorkspaceFolderBasename},type=bind",
+    "workspaceFolder": "/home/esp-bn/${localWorkspaceFolderBasename}",
+    "mounts": [
+        "source=extensionCache,target=/root/.vscode-server/extensions,type=volume"
+    ],
+    "customizations": {
+        "vscode": {
+            "settings": {
+                "terminal.integrated.defaultProfile.linux": "bash",
+                "terminal.integrated.fontLigatures.enabled": true,
+                "idf.espIdfPath": "/opt/esp/idf",
+                "idf.customExtraPaths": "/home/esp-bn/${localWorkspaceFolderBasename}",
+                "idf.pythonBinPath": "/opt/esp/python_env/idf5.2_py3.10_env/bin/python3",
+                "idf.toolsPath": "/opt/esp",
+                "idf.gitPath": "/usr/bin/git"
+            },
+            "extensions": [
+                "espressif.esp-idf-extension",
+                "espressif.esp-idf-web",
+                "ms-vscode.hexeditor",
+                "ms-vscode.cpptools",
+                "ms-vscode.cpptools-extension-pack",
+                "ms-vscode.vscode-embedded-tools",
+                "ms-vscode.cpptools",
+                "github.copilot-chat",
+                "cschlosser.doxdocgen",
+                "lextudio.restructuredtext",
+                "lextudio.restructuredtext-pack",
+                "trond-snekvik.simple-rst",
+                "wmaurer.change-case",
+                "mhutchie.git-graph",
+                "DrBlury.protobuf-vsc",
+                "Gruntfuggly.todo-tree",
+                "alefragnani.Bookmarks",
+                "usernamehw.errorlens",
+                "oderwat.indent-rainbow",
+                "esbenp.prettier-vscode",
+                "mcu-debug.debug-tracker-vscode",
+                "bierner.markdown-mermaid",
+                "zaaack.markdown-editor",
+                "hediet.vscode-drawio",
+                "nopeslide.vscode-drawio-plugin-mermaid",
+                "ms-vscode.vscode-websearchforcopilot",
+                "donjayamanne.python-extension-pack",
+                "github.vscode-github-actions",
+                "swyddfa.esbonio",
+                "ms-azuretools.vscode-containers",
+                "llvm-vs-code-extensions.vscode-clangd",
+                "ms-vscode.live-server",
+                "ms-vscode.remote-server"
+            ]
+        },
+        "codespaces": {
+            "settings": {
+                "terminal.integrated.defaultProfile.linux": "bash",
+                "idf.espIdfPath": "/opt/esp/idf",
+                "idf.customExtraPaths": "/home/esp-bn/${localWorkspaceFolderBasename}",
+                "idf.pythonBinPath": "/opt/esp/python_env/idf5.2_py3.10_env/bin/python",
+                "idf.toolsPath": "/opt/esp",
+                "idf.gitPath": "/usr/bin/git"
+            },
+            "extensions": [
+                "wmaurer.change-case",
+                "ms-vscode.hexeditor",
+                "ms-vscode.cpptools",
+                "ms-vscode.cpptools-extension-pack",
+                "espressif.esp-idf-extension",
+				"zxh404.vscode-proto3"
+            ]
+        }
+    },
+    "runArgs": ["--privileged"],
+    "remoteUser": "esp-bn",
+    "postCreateCommand": "chown esp-bn /home/esp-bn/${localWorkspaceFolderBasename}"
+}
