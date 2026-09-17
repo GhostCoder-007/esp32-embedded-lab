@@ -1,5 +1,13 @@
 idf_component_register(
-    SRCS "test_main.c"
-    INCLUDE_DIRS "."
-    REQUIRES unity led
+    SRCS
+        "test_main.c"
+        "../mocks/mock_gpio.c"
+    INCLUDE_DIRS
+        "."
+        "../mocks/"
+        "/opt/esp/idf/components/driver/gpio/include/driver"
+    REQUIRES
+        unity
+        led
+        driver
 )
