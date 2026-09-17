@@ -4,3 +4,5 @@ idf_component_register(SRCS "test_led.c"
                        INCLUDE_DIRS "."
                        REQUIRES unity led)
 
+idf_component_set_property(test WHOLE_ARCHIVE TRUE)
+
