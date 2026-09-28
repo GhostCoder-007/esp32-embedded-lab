@@ -3,6 +3,7 @@
 #include "esp_err.h"
 #include "esp_log.h"
 #include <stdint.h>
+#include <stdio.h>
 #include "driver/gpio.h"
 /*Generic Constants*/
 #define IO_ON 1

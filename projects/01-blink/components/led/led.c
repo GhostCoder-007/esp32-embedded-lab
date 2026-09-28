@@ -1,6 +1,6 @@
 #include "led.h"
 
-static const char *TAG = "LED_ON_OFF";
+//static const char *TAG = "LED_ON_OFF";
 
 esp_err_t led_init(led_config_t *led_config)
 {
@@ -11,17 +11,18 @@ esp_err_t led_init(led_config_t *led_config)
     .pull_down_en = GPIO_PULLDOWN_DISABLE,
     .intr_type = GPIO_INTR_DISABLE,
     };
+    printf("Initialized\n");
     return gpio_config(&io_config);
 }
 
 void led_on(led_config_t *led_config)
 {
     gpio_set_level(led_config->pin,IO_ON);
-    ESP_LOGI(TAG, "LED IS ON");
+    printf("LED ON\n");
 }
 
 void led_off(led_config_t *led_config)
 {
     gpio_set_level(led_config->pin,IO_OFF);
-    ESP_LOGI(TAG, "LED IS OFF");
+    printf("LED OFF\n");
 }
