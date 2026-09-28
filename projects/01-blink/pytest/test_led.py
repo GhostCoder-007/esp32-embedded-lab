@@ -1,4 +1,5 @@
 import pytest
+from led_model import LED_PIN
 
 class BlinkLed:
     def __init__(self):
@@ -10,7 +11,7 @@ class BlinkLed:
     def off(self):
             self.led_state = 0
 
-@pytest.fixture() # it helps control instances in the case of expensive resources invocation, its best to create one instance.
+@pytest.fixture() # (scope="module")it helps control instances in the case of expensive resources invocation, its best to create one instance.
 def led():
     print("\nCreating LED")
     yield BlinkLed()

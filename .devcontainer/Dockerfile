@@ -28,6 +28,9 @@ RUN apt-get update \
   libssl-dev \
   zsh \
   ripgrep \
+  pkg-config libdbus-1-dev \
+  libglib2.0-dev \
+  python3.10-dev \
   && rm -rf /var/lib/apt/lists/*
 
 RUN update-alternatives --install /usr/local/bin/usbip usbip `ls /usr/lib/linux-tools/*/usbip | tail -n1` 20
@@ -35,6 +38,7 @@ RUN update-alternatives --install /usr/local/bin/usbip usbip `ls /usr/lib/linux-
 # Install all the required tools
 RUN /opt/esp/idf/install.sh --enable-gdbgui
 RUN /opt/esp/idf/tools/idf_tools.py install esp-clang
+RUN /opt/esp/idf/install.sh --enable-pytest
 
 
 ENV LC_ALL=C.UTF-8
