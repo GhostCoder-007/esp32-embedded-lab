@@ -14,15 +14,18 @@ def test_dut(dut):
 def test_blink_sequence(dut): # test the actual sequence in serial buffer
     dut.expect("Initialized", timeout=5)
     dut.expect("LED ON", timeout=5)
-    
+    dut.expect("LED OFF", timeout=5)
 
-    dut.expect("LED OFF", timeout=5)
-    
-    
-def test_blink_off_sequence(dut): # test the actual sequence in serial buffer
+def test_already_there(dut):
     dut.expect("LED ON", timeout=5)
-    print("FOUND ON")
+    print("FIRST ON FOUND")
+
+    dut.expect("LED ON", timeout=5)
+    print("SECOND ON FOUND")
+    
+def test_missing(dut):
+    dut.expect("LED ON", timeout=5)
+    print("FIRST ON FOUND")
+
     dut.expect("Initialized", timeout=5)
-    print("FOUND INIT")
-    dut.expect("LED OFF", timeout=5)
-    print("FOUND OFF")
+    print("INITIALIZED FOUND")
