@@ -24,5 +24,18 @@ def test_led_on(led):
     
 def test_led_off(led):
     led.off()
+    method = getattr(led,"off")
+    print("method: ",method)
     assert led.led_state == 0
     
+@pytest.mark.parametrize(
+    "operation, expected",
+    [
+        ("off", 0),
+        ("on", 1),
+        ("on", 1)
+    ]
+)
+def test_many_leds(led,operation,expected):
+    getattr(led,operation)() # invokes the method in BlinkLed class => 'off' = led.off()
+    assert led.led_state == expected
