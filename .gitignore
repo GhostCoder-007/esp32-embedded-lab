@@ -1,6 +1,7 @@
 #.devcontainer/
 .vscode/
 .cache/
+__pycache__/
 build/
 sdkconfig
 # sdkconfig.old
