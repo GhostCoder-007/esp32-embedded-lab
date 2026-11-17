@@ -17,4 +17,7 @@ typedef struct {
 
 esp_err_t ultrasonic_init(ultrasonic_t *sensor);
 
+#define ECHO_PIN GPIO_NUM_23
+#define TRIG_PIN GPIO_NUM_22
+
 #endif

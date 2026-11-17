@@ -1,9 +1,21 @@
 #include "ultrasonic.h"
+#include <stdlib.h>
 
+void isr_handler(void *args)
+{
+    ultrasonic_t *sensor = (ultrasonic_t*)args;
+    if (gpio_get_level(sensor->echo_pin))
+    {
+        // positive edge
+    }
+    else
+    {
+        // negative edge
+    }
+}
 
 esp_err_t ultrasonic_init(ultrasonic_t *sensor)
 {
-
     if (sensor == NULL)
     {
         return ESP_ERR_INVALID_ARG;
@@ -50,6 +62,13 @@ esp_err_t ultrasonic_init(ultrasonic_t *sensor)
     {
         return echo_err_returned;
     }
-    
+
+    esp_err_t handler_returned = gpio_isr_handler_add(sensor->echo_pin,isr_handler,sensor);
+    if (handler_returned != ESP_OK)
+    {
+        return handler_returned;
+    }
+
     return ESP_OK;
 }
+
