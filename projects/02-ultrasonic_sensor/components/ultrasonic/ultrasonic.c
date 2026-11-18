@@ -1,16 +1,26 @@
 #include "ultrasonic.h"
-#include <stdlib.h>
+#include "esp_timer.h"
 
-void isr_handler(void *args)
+static void isr_handler(void *args)
 {
     ultrasonic_t *sensor = (ultrasonic_t*)args;
     if (gpio_get_level(sensor->echo_pin))
     {
         // positive edge
+        if (sensor->state == ULTRASONIC_WAITING_FOR_RISING)
+        {
+            sensor->rising_timestamp = esp_timer_get_time();
+            sensor->state = ULTRASONIC_WAITING_FOR_FALLING;
+        }
     }
     else
     {
         // negative edge
+        if (sensor->state == ULTRASONIC_WAITING_FOR_FALLING)
+        {
+            sensor->falling_timestamp = esp_timer_get_time();
+            sensor->state = ULTRASONIC_COMPLETE;
+        }
     }
 }
 
@@ -62,6 +72,8 @@ esp_err_t ultrasonic_init(ultrasonic_t *sensor)
     {
         return echo_err_returned;
     }
+
+    sensor->state = ULTRASONIC_IDLE;
 
     esp_err_t handler_returned = gpio_isr_handler_add(sensor->echo_pin,isr_handler,sensor);
     if (handler_returned != ESP_OK)

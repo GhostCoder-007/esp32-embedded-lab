@@ -3,21 +3,32 @@
 
 #include "esp_err.h"
 #include "driver/gpio.h"
-#include <time.h>
+#include <stdint.h>
 
 #define IO_ON 1
 #define IO_OFF 0
 
+typedef enum
+{
+    ULTRASONIC_IDLE,
+    ULTRASONIC_WAITING_FOR_RISING,
+    ULTRASONIC_WAITING_FOR_FALLING,
+    ULTRASONIC_COMPLETE
+} ultrasonic_state_t;
+
 typedef struct {
     gpio_num_t trig_pin; 
     gpio_num_t echo_pin;
-    time_t starttime;
-    time_t endtime;
+    int64_t  rising_timestamp;
+    int64_t  falling_timestamp;
+    ultrasonic_state_t state;
 } ultrasonic_t;
+
+
 
 esp_err_t ultrasonic_init(ultrasonic_t *sensor);
 
-#define ECHO_PIN GPIO_NUM_23
-#define TRIG_PIN GPIO_NUM_22
+#define ECHO_PIN GPIO_NUM_23 //move to main
+#define TRIG_PIN GPIO_NUM_22 //move to main
 
 #endif
