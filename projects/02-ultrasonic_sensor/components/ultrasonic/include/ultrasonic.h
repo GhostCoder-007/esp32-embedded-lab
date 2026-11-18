@@ -23,14 +23,11 @@ typedef struct {
     gpio_num_t echo_pin;
     int64_t  rising_timestamp;
     int64_t  falling_timestamp;
-    ultrasonic_state_t state;
+    volatile ultrasonic_state_t state;
     TaskHandle_t measurement_task;
 } ultrasonic_t;
 
 esp_err_t ultrasonic_init(ultrasonic_t *sensor);
 esp_err_t ultrasonic_measure(ultrasonic_t *sensor, float *distance_cm);
-
-#define ECHO_PIN GPIO_NUM_23 //move to main
-#define TRIG_PIN GPIO_NUM_22 //move to main
 
 #endif

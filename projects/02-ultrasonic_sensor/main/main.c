@@ -2,6 +2,9 @@
 #include "ultrasonic.h"
 #include "driver/gpio.h"
 
+#define ECHO_PIN GPIO_NUM_22
+#define TRIG_PIN GPIO_NUM_23 
+
 void app_main(void)
 {
     esp_err_t install_err = gpio_install_isr_service(0);
@@ -17,6 +20,9 @@ void app_main(void)
         {
             printf("Ultrasonic initialization failed: %s\n",esp_err_to_name(init_err));
         }
+        float distance_calc; //cm
+        ultrasonic_measure(&sensor1,&distance_calc);
+        printf("Measured Distance: %f cm\n",esp_err_to_name(init_err));
     }
     else
     {

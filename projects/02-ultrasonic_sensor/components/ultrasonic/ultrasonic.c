@@ -2,8 +2,10 @@
 #include "esp_err.h"
 #include "esp_timer.h"
 #include <math.h>
+#include "freertos/projdefs.h"
 #include "freertos/task.h"
 #include "portmacro.h"
+#include "esp_rom_sys.h"
 
 static void isr_gpio_handler(void *args)
 {
@@ -27,14 +29,19 @@ static void isr_gpio_handler(void *args)
 
             // vTaskNotifyGiveFromISR() -> notifies that the falling edge is complete and calculation can commence
             BaseType_t pxHigherPriorityTaskWoken = pdFALSE;
-            vTaskNotifyGiveFromISR(sensor->measurement_task,&pxHigherPriorityTaskWoken);
+
+            if (sensor->measurement_task != NULL)
+            {   
+                vTaskNotifyGiveFromISR(sensor->measurement_task,&pxHigherPriorityTaskWoken); //unblocks measurement task
+                portYIELD_FROM_ISR(pxHigherPriorityTaskWoken); // allows context switch to happen immediately to a higher priority task if necessary
+            }
         }
     }
 }
 
 esp_err_t ultrasonic_init(ultrasonic_t *sensor)
 {
-    if (sensor == NULL) // check for invalid args in sensor struct (cant be empty)
+    if (sensor == NULL) // make sure pointer location is valid.
     {
         return ESP_ERR_INVALID_ARG;
     }
@@ -108,32 +115,74 @@ esp_err_t ultrasonic_measure(ultrasonic_t *sensor, float *distance_cm)
         return ESP_ERR_INVALID_ARG;
     }
 
-    if ((sensor->echo_pin == sensor->trig_pin) || !(GPIO_IS_VALID_OUTPUT_GPIO(sensor->trig_pin)) || !(GPIO_IS_VALID_GPIO(sensor->echo_pin)))
+    // Ensure no measurement is already running
+    if (sensor->state == ULTRASONIC_IDLE || sensor->state == ULTRASONIC_COMPLETE)
     {
-        return ESP_ERR_INVALID_ARG;
+        // Create task handle
+        sensor->measurement_task = xTaskGetCurrentTaskHandle();
+
+        //clear any pending notification immediately without blocking
+        ulTaskNotifyTake(pdTRUE, 0);
+
+        // set the ultrasonic state to ULTRASONIC_WAITING_FOR_RISING
+        sensor->state = ULTRASONIC_WAITING_FOR_RISING;
+
+        // Generate Trip Pulse
+        // SET Trigger to HIGH
+        esp_err_t gpio_on_err_returned = gpio_set_level(sensor->trig_pin,IO_ON);
+        if (gpio_on_err_returned != ESP_OK)
+        {
+            sensor->state = ULTRASONIC_IDLE;
+            sensor->measurement_task = NULL;
+            return gpio_on_err_returned;
+        }
+
+        // delay for 10 us and then reset for a 10 µs trigger pulse (TRIG requirement)
+        esp_rom_delay_us(10); 
+
+        // SET Trigger to LOW
+        esp_err_t gpio_off_err_returned = gpio_set_level(sensor->trig_pin,IO_OFF);
+
+        if (gpio_off_err_returned != ESP_OK)
+        {
+            sensor->state = ULTRASONIC_IDLE;
+            sensor->measurement_task = NULL;
+            return gpio_off_err_returned;
+        }
+
+        /* 
+        Wait for ISR to complete measurement - ulTaskNotifyTake() -> wait so CPU isnt wasted
+        pdTRUE-> clears notification count when task receives it
+        portMAX_DELAY -> block task till notification is received from ISR
+        */
+        uint32_t ulNotificationValue = ulTaskNotifyTake(pdTRUE, pdMS_TO_TICKS(100)); // timeout of 100ms
+
+        if (ulNotificationValue != 0)
+        {
+            if (sensor->state == ULTRASONIC_COMPLETE)
+            {
+                //Calculate Distance (Pulse duration stored in distance_cm mem)
+                *distance_cm = ((float)(sensor->falling_timestamp - sensor->rising_timestamp))/58.0f; //used formular
+                sensor->measurement_task = NULL;
+            }
+            else
+            {
+                sensor->state = ULTRASONIC_IDLE;
+                sensor->measurement_task = NULL;
+                return ESP_ERR_INVALID_STATE;
+            }
+        }
+        else
+        {
+            sensor->state = ULTRASONIC_IDLE;
+            sensor->measurement_task = NULL;
+            return ESP_ERR_TIMEOUT;
+        }
+        return ESP_OK;
     }
-
-    // esure no measurement is already running
-
-    // Create task handle
-    sensor->measurement_task = xTaskGetCurrentTaskHandle();
-
-    // set the ultrasonic state to ULTRASONIC_WAITING_FOR_RISING
-    sensor->state = ULTRASONIC_WAITING_FOR_RISING;
-
-    // Generate Trip Pulse
-    esp_err_t gpio_err_returned = gpio_set_level(sensor->trig_pin,IO_ON);
-    if (gpio_err_returned != ESP_OK)
+    else
     {
-        return gpio_err_returned;
+        return ESP_ERR_INVALID_STATE;
     }
-
-    // Wait for ISR to complete measurement
-    //ulTaskNotifyTake() -> wait so CPU isnt wasted
-
-    //Calculate Distance (Pulse duration stored in distance_cm mem)
-
-
-    return ESP_OK;
 }
 
