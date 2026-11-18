@@ -6,6 +6,7 @@
 #include <stdint.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "portmacro.h"
 
 #define IO_ON 1
 #define IO_OFF 0
@@ -25,6 +26,7 @@ typedef struct {
     int64_t  falling_timestamp;
     volatile ultrasonic_state_t state;
     TaskHandle_t measurement_task;
+    portMUX_TYPE mux;
 } ultrasonic_t;
 
 esp_err_t ultrasonic_init(ultrasonic_t *sensor);

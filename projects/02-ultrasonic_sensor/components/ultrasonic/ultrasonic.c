@@ -12,27 +12,39 @@ static void isr_gpio_handler(void *args)
     ultrasonic_t *sensor = (ultrasonic_t*)args;
     if (gpio_get_level(sensor->echo_pin))
     {
+        
         // positive edge
+        taskENTER_CRITICAL_ISR(&sensor->mux);
         if (sensor->state == ULTRASONIC_WAITING_FOR_RISING)
         {
             sensor->rising_timestamp = esp_timer_get_time();
             sensor->state = ULTRASONIC_WAITING_FOR_FALLING;
         }
+        taskEXIT_CRITICAL_ISR(&sensor->mux);
     }
     else
     {
         // negative edge
+        bool ready_to_notify_falling = false;
+        taskENTER_CRITICAL_ISR(&sensor->mux);
         if (sensor->state == ULTRASONIC_WAITING_FOR_FALLING)
         {
             sensor->falling_timestamp = esp_timer_get_time();
             sensor->state = ULTRASONIC_COMPLETE;
+            ready_to_notify_falling = true;
+        }
+        TaskHandle_t currentTask = sensor->measurement_task;
 
+        taskEXIT_CRITICAL_ISR(&sensor->mux);
+
+        if (ready_to_notify_falling)
+        {
             // vTaskNotifyGiveFromISR() -> notifies that the falling edge is complete and calculation can commence
             BaseType_t pxHigherPriorityTaskWoken = pdFALSE;
 
-            if (sensor->measurement_task != NULL)
+            if (currentTask != NULL)
             {   
-                vTaskNotifyGiveFromISR(sensor->measurement_task,&pxHigherPriorityTaskWoken); //unblocks measurement task
+                vTaskNotifyGiveFromISR(currentTask,&pxHigherPriorityTaskWoken); //unblocks measurement task
                 portYIELD_FROM_ISR(pxHigherPriorityTaskWoken); // allows context switch to happen immediately to a higher priority task if necessary
             }
         }
@@ -116,24 +128,34 @@ esp_err_t ultrasonic_measure(ultrasonic_t *sensor, float *distance_cm)
     }
 
     // Ensure no measurement is already running
-    if (sensor->state == ULTRASONIC_IDLE || sensor->state == ULTRASONIC_COMPLETE)
+    bool sensor_available = false;
+
+    taskENTER_CRITICAL(&sensor->mux); //prevent resource conflicts - one elemet
+    if (sensor->state == ULTRASONIC_IDLE)
     {
         // Create task handle
         sensor->measurement_task = xTaskGetCurrentTaskHandle();
 
-        //clear any pending notification immediately without blocking
-        ulTaskNotifyTake(pdTRUE, 0);
-
         // set the ultrasonic state to ULTRASONIC_WAITING_FOR_RISING
         sensor->state = ULTRASONIC_WAITING_FOR_RISING;
+        sensor_available  = true;
+    }
+    taskEXIT_CRITICAL(&sensor->mux);
+
+    if (sensor_available)
+    {
+        //clear any pending notification immediately without blocking
+        ulTaskNotifyTake(pdTRUE, 0);
 
         // Generate Trip Pulse
         // SET Trigger to HIGH
         esp_err_t gpio_on_err_returned = gpio_set_level(sensor->trig_pin,IO_ON);
         if (gpio_on_err_returned != ESP_OK)
         {
+            taskENTER_CRITICAL(&sensor->mux);
             sensor->state = ULTRASONIC_IDLE;
             sensor->measurement_task = NULL;
+            taskEXIT_CRITICAL(&sensor->mux);
             return gpio_on_err_returned;
         }
 
@@ -145,8 +167,10 @@ esp_err_t ultrasonic_measure(ultrasonic_t *sensor, float *distance_cm)
 
         if (gpio_off_err_returned != ESP_OK)
         {
+            taskENTER_CRITICAL(&sensor->mux);
             sensor->state = ULTRASONIC_IDLE;
             sensor->measurement_task = NULL;
+            taskEXIT_CRITICAL(&sensor->mux);
             return gpio_off_err_returned;
         }
 
@@ -163,19 +187,26 @@ esp_err_t ultrasonic_measure(ultrasonic_t *sensor, float *distance_cm)
             {
                 //Calculate Distance (Pulse duration stored in distance_cm mem)
                 *distance_cm = ((float)(sensor->falling_timestamp - sensor->rising_timestamp))/58.0f; //used formular
+                taskENTER_CRITICAL(&sensor->mux);
+                sensor->state = ULTRASONIC_IDLE;
                 sensor->measurement_task = NULL;
+                taskEXIT_CRITICAL(&sensor->mux);
             }
             else
             {
+                taskENTER_CRITICAL(&sensor->mux);
                 sensor->state = ULTRASONIC_IDLE;
                 sensor->measurement_task = NULL;
+                taskEXIT_CRITICAL(&sensor->mux);
                 return ESP_ERR_INVALID_STATE;
             }
         }
         else
         {
+            taskENTER_CRITICAL(&sensor->mux);
             sensor->state = ULTRASONIC_IDLE;
             sensor->measurement_task = NULL;
+            taskEXIT_CRITICAL(&sensor->mux);
             return ESP_ERR_TIMEOUT;
         }
         return ESP_OK;
