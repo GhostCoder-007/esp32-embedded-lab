@@ -22,7 +22,7 @@ void app_main(void)
         }
         float distance_calc; //cm
         ultrasonic_measure(&sensor1,&distance_calc);
-        printf("Measured Distance: %f cm\n",esp_err_to_name(init_err));
+        printf("Measured Distance: %f cm\n",distance_calc);
     }
     else
     {
